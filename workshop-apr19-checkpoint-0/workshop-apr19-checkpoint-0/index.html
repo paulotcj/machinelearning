@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" style="height:100%">
+
+<head>
+    <meta charSet="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Artificial intelligence with Mihok from TorontoJS, building on basic knowledge we will discover and build Neural Networks from scratch to get a better understanding of how they work." />
+    <title>JS Workshop</title>
+    <script type="text/javascript" src="helpers/manifest.lib.js"></script>
+    <script type="text/javascript" src="helpers/math.lib.js"></script>
+    <script type="text/javascript" src="helpers/data.lib.js"></script>
+</head>
+
+<body>
+  <script type="text/javascript" src="helpers/renderers.lib.js"></script>
+  <script type="text/javascript">
+
+
+	function Sigmoid ( x ) 
+	{
+  		return 1 / (1 + Math.exp((-x)));
+	}
+
+	function DerivSigmoid ( x ) 
+	{
+  		let fx = Sigmoid(x);
+  		return fx * (1 - fx);
+	}
+
+
+
+	// Shared variable names to reference information
+	// only used as indexes for arrays
+	const H1 = 0; // array index for hidden layer 1 -- OR INPUT LAYER
+	const H2 = 1; // array index for hidden layer 2 -- HIDDEN LAYER
+	const O1 = 2; // array index for output layer 1 -- OUTPUT LAYER
+
+
+	// only used as indexes for arrays
+	const W1 = 0; //(INDEX ONLY) -- HIDDEN LAYER 1 NEURON 1 WEIGHT 1
+	const W2 = 1; //(INDEX ONLY) -- HIDDEN LAYER 1 NEURON 1 WEIGHT 2
+	const W3 = 2; //(INDEX ONLY) -- HIDDEN LAYER 1 NEURON 2 WEIGHT 1
+	const W4 = 3; //(INDEX ONLY) -- HIDDEN LAYER 1 NEURON 2 WEIGHT 2
+	const W5 = 4; //(INDEX ONLY) -- OUTPUT LAYER   NEURON 2 WEIGHT 1
+	const W6 = 5; //(INDEX ONLY) -- OUTPUT LAYER   NEURON 1 WEIGHT 2
+
+	// only used as indexes for arrays
+	const I1 = 0;
+	const I2 = 1;
+
+
+    //----------------------------------------------------------------------
+    class Network
+	{
+		// Network's fields
+		// Biases
+		biases = [
+			0, // bias1 for hidden layer1
+			0, // bias2 for hidden layer2
+			0, // bias3 for output
+		];
+
+		// Weights
+		weights = [0,0,0,0,0,0];
+
+		lossFn = function (a, p) { throw new Error('not implemented'); };
+
+		derivFn = function (a, p) { throw new Error('not implemented'); };
+
+
+		// Hidden layer
+		hidden = [];
+
+		// Output layer
+		output;
+
+		//------
+		constructor(weights = [], biases = [] , activatorFn , derivFn,  lossFn)
+		{
+			this.weights = weights;
+			this.biases  = biases;
+			this.derivFn = derivFn;
+			this.lossFn  = lossFn;
+
+			//splits the weights into 3 different arrays 
+			//  note: W1,W2,W3,W4,W5,W6 are only being used here as index for 'this.weights' array 
+			const h1Weights = [ this.weights[W1] , this.weights[W2] ];
+			const h2Weights = [ this.weights[W3] , this.weights[W4] ];
+			const o1Weights = [ this.weights[W5] , this.weights[W6] ];
+
+			//hidden layer
+			this.hidden = [
+				new Neuron(h1Weights , this.biases[H1], activatorFn),
+				new Neuron(h2Weights , this.biases[H2], activatorFn),
+			];			
+
+			// output neuron
+			this.output = new Neuron(o1Weights, this.biases[O1], activatorFn, );
+		} // end of constructor
+		//------
+	  
+		//------
+		// ** add something here
+		// train() will receive input data and compare its calculations against the expected result
+
+
+
+
+
+		//---------------------------------------------------------------
+		// ##############################################################
+		// NOT TESTED - START
+		// ##############################################################
+	
+		// train() takes in a set of data to train on, and corrisponding answers 
+		train (data = [], answers = [], iterations = 1000, rate = 0.1) 
+		{
+			let lossData = [];
+
+			// We'll iterate over the data several times to adjust the weights 
+			for (let i = 0; i < iterations; i += 1) 
+			{
+				for (let d in data) 
+				{
+					//------------------------------------------------------------------
+					// Get our individual neuron data to calculate things
+
+					// Calculate our 1st hidden layer neuron
+					let h1_Sum = this.hidden[H1].sum(data[d]);
+					let h1_ActivationResult = this.hidden[H1].activatorFn(h1_Sum);
+
+					// Calculate our 2nd hidden layer neuron
+					let h2_Sum = this.hidden[H2].sum(data[d]);
+					let h2_ActivationResult = this.hidden[H2].activatorFn(h2_Sum);
+
+					// Calcualte our output layer neuron
+					let o1_Sum = this.output.sum([h1_ActivationResult, h2_ActivationResult]);
+					let o1_ActivationResult = this.output.activatorFn(o1_Sum);
+
+					// Here is the networks current prediction
+					let L_pred = o1_ActivationResult;
+					//------------------------------------------------------------------
+
+
+					// ORIGINAL COMMENT
+					//
+					// Now we'll calculate an adjustment to the weights with partial
+					// derivatives to improve that prediction based on the actual answers.
+					// The formula we use is the following,
+					//
+					// ∂L/∂wN = ∂L/∂pred * ∂pred/∂wN
+					//
+					// Which will give us a value that we can apply against our learning
+					// rate to adjust a particular weight
+
+
+
+
+					//------------------------------------------------------------------
+					// NEGATIVE GRADIENT OF STEEPEST DESCENT (in this particular case)
+					//   Definitions: 
+					//       b(L)    = bias of neuron 'n' from layer number L
+					//       w(L)    = weight of neuron 'n' from layer number L
+					//       z(L)    = sum of the weighted activations from the previous layer
+					//                 z(L) = w(L) * a(L-1) + b(L)
+					//       a(L)    = activation result from neuron 'n' from layer number L - already considering the activation function sigmoid was applied 
+					//				   a(L) = σ(z(L))
+					//       y       = expected result from neuron 'n' from layer number L 					
+					//       Cost(0) = C(0) = function cost at index 0 (zero)
+					// 			       C(0) = ( a(L) - y)²
+					//       ∂       = partial derivative
+					//
+					//
+					// Now we'll calculate an adjustment to the weights with partial
+					// derivatives to improve that prediction based on the actual answers, or put diffenrently,
+					// how sensitive the cost function is to small changes to weight
+					//
+					// ∂C(0)/∂w(L)  and this is equal to....  (also plese check how to calculate the average of all training- or check this out https://www.youtube.com/watch?v=tIeHLnjs5U8&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi&index=4&t=315 )
+					//
+					// ∂C(0)/∂w(L) = ∂z(L)/∂w(L) * ∂a(L)/∂z(L) * ∂C(0)/∂a(L)  -- chain rule
+					//
+					// CALCULATING DERIVATIVES
+					//     ∂C(0)/∂a(L) = 2 * ( a(L) - y )    -- derivative of C with respect to a(L)
+					//     ∂a(L)/∂z(L) = σ'(z(L))
+					//     ∂z(L)/∂w(L) = a(L-1)
+
+
+
+					// ∂L/∂wN = ∂L/∂pred * ∂pred/∂wN
+
+					
+					// L - answer expected, sometimes referred as 'y'
+					// pred - prediction generated by the layer, somtimes referred as 'L' 
+					//
+					// Which will give us a value that we can apply against our learning
+					// rate to adjust a particular weight
+
+					//this part can be better explained by visiting:
+					// https://www.youtube.com/watch?v=Ilg3gGewQ5U&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi&index=3&t=70
+					// AND
+					// https://www.youtube.com/watch?v=tIeHLnjs5U8&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi&index=4&t=103
+
+        
+					// ∂C(0)/∂a(L) = 2*(answer - prediction);
+					let pLpO1 = 2 * (L_pred - answers[d]);
+					//------------------------------------------------------------------
+
+
+					// Lets do our backpropagation to calculate the rest
+
+					// Output Neuron
+
+					// ∂pred/∂w6
+					// PC                              ∂a(L)/∂z(L)
+					let pO1pW6 = h1_ActivationResult * this.derivFn(o1_Sum);
+					// ∂pred/∂w5
+					let pO1pW5 = h2_ActivationResult * this.derivFn(o1_Sum);
+
+					// ∂pred/∂b3
+					let pO1pB3 = this.derivFn(o1_Sum);
+
+
+					// ∂pred/∂h1
+					let pO1pH1 = this.weights[W5] * this.derivFn(o1_Sum);
+					// ∂pred/∂h2
+					let pO1pH2 = this.weights[W6] * this.derivFn(o1_Sum);
+
+					// Hidden Neurons
+
+					// ∂h1/∂w1
+					let pH1pW1 = data[d][I1] * this.derivFn(h1_Sum);
+					// ∂h2/w2
+					let pH1pW2 = data[d][I2] * this.derivFn(h1_Sum);
+					// ∂h1/b1
+					let pH1pB1 = this.derivFn(h1_Sum);
+
+					// ∂h2/w3
+					let pH2pW3 = data[d][I1] * this.derivFn(h2_Sum);
+					// ∂h2/w4
+					let pH2pW4 = data[d][I2] * this.derivFn(h2_Sum);
+
+					// ∂h2/b2
+					let pH2pB2 = this.derivFn(h2_Sum);
+
+
+
+
+					// Set our new weights and biases in our network so we remember them
+					this.weights[W1] -= rate * pLpO1 * pO1pH1 * pH1pW1;
+					this.weights[W2] -= rate * pLpO1 * pO1pH1 * pH1pW2;
+       
+					this.weights[W3] -= rate * pLpO1 * pO1pH2 * pH2pW3;
+					this.weights[W4] -= rate * pLpO1 * pO1pH2 * pH2pW4;
+       
+					this.weights[W5] -= rate * pLpO1 * pO1pW5;
+					this.weights[W6] -= rate * pLpO1 * pO1pW6;
+
+					this.biases[H1] -= rate * pLpO1 * pO1pH1 * pH1pB1;
+					this.biases[H2] -= rate * pLpO1 * pO1pH2 * pH2pB2;
+					this.biases[O1] -= rate * pLpO1 * pO1pB3;
+
+
+					// Now let's update our weights and biases to minimize loss
+        
+					// Output Neuron
+					// Update our ouput neuron to reflect the new weights
+					this.output.weights = [
+						this.weights[W5],
+						this.weights[W6],
+					];
+
+					this.output.bias = this.biases[O1];
+
+
+					// Hidden Layer Neuron #2
+					// Update our neuron to reflect the new weights
+					this.hidden[H2].weights = [
+						this.weights[W3],
+						this.weights[W4],
+					];
+
+					this.hidden[H2].bias = this.biases[H2];
+	
+					// Hidden Layer Neuron #1
+					// Update our neuron to reflect the new weights
+					this.hidden[H1].weights = [
+						this.weights[W1],
+						this.weights[W2],
+					];
+
+					this.hidden[H1].bias = this.biases[H1];
+				} // END OF for (let d in data)
+
+				// Finally lets calculate our loss and output it for sanity
+				if (i % 10 === 0) 
+				{
+					// Generate an array of the output of our network at this time for each
+					// row of data, then 
+					let currentPrediction = [];
+					data.forEach((row) => 
+					{
+						currentPrediction.push(this.query(row));
+					}, this);
+        
+					let loss = this.lossFn(answers, currentPrediction);
+
+					lossData.push(loss);
+
+					console.log(`iteration #${i}, loss: ${loss}`);
+				}
+			} // END OF for (let i = 0; i < iterations; i += 1) 
+
+			console.graph(lossData);
+		} // END OF train (data = [], answers = [], iterations = 1000, rate = 0.1) 
+  
+		//---------------------------------------------------------------
+		// ##############################################################
+		// NOT TESTED - START
+		// ##############################################################
+		
+		//---------------------------------------------------------------
+
+
+		//------
+		// run() takes in inputs for a single run of the network, typically done after
+		// it has been trained
+		query(inputs = [])
+		{
+			let hiddenLayerOutput = [];
+			for(let i in this.hidden) //hidden layers of neurons
+			{
+				//feed input to the hidden layer (namely feed input to neuron_1 and neuron_2)
+				// and each neuron in the hidden layer will produce an output, which is stored (push)
+				// into the 'hiddenLayerOutput' array
+				hiddenLayerOutput.push(this.hidden[i].activate(inputs));
+			}
+
+			//finally feed the output from the hidden layer to the output layer
+			return this.output.activate(hiddenLayerOutput); // output layer of neurons - last layer
+		} //end of query
+		//------
+
+
+	} // end of class Network
+    //----------------------------------------------------------------------
+
+
+    //----------------------------------------------------------------------
+    class Neuron
+    {
+		bias;
+		weights;
+		activatorFn = function(x){ throw new Error('not implemented'); };
+		derivFn = function(x){ throw new Error('not implemented'); };
+
+		//------
+		//constructor(weights = [], bias = 0, activatorFn, derivFn)
+		constructor(weights = [], bias = 0, activatorFn)
+		{
+			this.weights = weights;
+			this.bias = bias;
+			this.activatorFn = activatorFn;
+			//this.derivFn = derivFn;
+		} // end of constructor
+		//------
+
+		//------
+		sum (inputs = [])
+		{
+			let buffer = [];
+			let output = 0;
+
+			//the general formula for this sum function is
+			// ( V1*W1 + V2*W2 + ... + Vn*Wn ) + BIAS
+
+			// weighing the inputs
+			for(let i in inputs)
+			{
+				buffer[i] = inputs[i] * this.weights[i];
+			}
+
+			//sum
+			for(let i in buffer)
+			{
+				output += buffer[i];
+			}
+
+			output += this.bias;
+
+			return output;
+		} // end of sum
+		//------
+
+		//------
+		activate(inputs = [])
+		{
+			if(inputs.length !== this.weights.length){ throw new Error('input and weight shape mismatch'); }
+
+			let output = 0;
+			output = this.sum(inputs); //sum executes weighing + sum + bias
+
+			// Neuron activation is based sigmoid function
+			let result = this.activatorFn(output);
+
+			return result;
+
+
+		} // end of activate
+		//------
+
+
+	} // end of class Neuron
+    //----------------------------------------------------------------------
+
+    // const weight = 1;
+    // const bias = 4;
+    // const value = 2;
+    // const n = new Neuron(weight,bias,Math.sigmoid);
+
+    
+    // console.log('Run neuron against inputs');
+    // console.log( 'n.activate(value): ' + n.activate(value) );
+
+
+
+
+    //-------------------------
+	// COMMENTED TEMPORARILY
+	
+	// console.log('manually starting and defining neural network - start');
+
+	// //               ┌───────────────► HIDDEN LAYER NEURON 1 WEIGHT 1 
+	// //               │  ┌────────────► HIDDEN LAYER NEURON 1 WEIGHT 2 
+	// //               │  │  ┌─────────► HIDDEN LAYER NEURON 2 WEIGHT 1 
+	// //               │  │  │  ┌──────► HIDDEN LAYER NEURON 2 WEIGHT 2 
+	// //				 │	│  │  │	 ┌───► OUTPUT LAYER NEURON O WEIGHT 1 
+	// //				 │  │  │  │  │  ┌► OUTPUT LAYER NEURON O WEIGHT 2 
+ //    const weights = [0, 1, 0, 1, 0, 1];
+ //    const bias = [0,0,0];
+ //    const activatorFunction = Math.sigmoid;
+ //    const derivativeActFnc = null;
+ //    const lossFnc = null;
+ //    const network = new Network(weights, bias, activatorFunction, derivativeActFnc, lossFnc);
+
+ //    const inputValues = [2, 3];
+ //    console.log('Run neural network against inputs');
+ //    console.log(network.query(inputValues));  
+	
+	// console.log('manually starting and defining neural network - end');
+	
+	//---------------------------------------------------------------
+	// ##############################################################
+	// NOT TESTED - START
+	// ##############################################################
+
+
+	let trainingData = {};
+
+	// We apply an arbitrary shift amount (135 to weight, 66 to height) so our data 
+	// is easier to deal with, typically you would shift based on the mean.
+	//  Name, Weight (lbs), Height (in), Gender
+	trainingData.whg = [
+	  // { name: "Alice",   weight: 133,  height: 65, gender: F },
+	  { name: "Alice",   weight: -2,  height: -1, gender: 1 },
+	  // { name: "Bob",     weight: 160,  height: 72,  gender: M },
+	  { name: "Bob",     weight: 25,  height: 6,  gender: 0 },
+	  // { name: "Charlie", weight: 152,  height: 70,  gender: M },
+	  { name: "Charlie", weight: 17,  height: 4,  gender: 0 },
+	  // { name: "Diana",   weight: 120, height: 60, gender: F },
+	  { name: "Diana",   weight: -15, height: -6, gender: 1 },
+	];
+
+
+
+	
+	// Let's generate our training data in a machine-readable form
+	const data = [];
+
+	for (let row in trainingData.whg) 
+	{
+		data.push
+		([
+			// I1
+			trainingData.whg[row].weight,
+			// I2
+			trainingData.whg[row].height,
+		]);
+	};
+
+	// Let's generate our training "answer" data in a machine-readable form
+	const answers = [];
+	for (let row in trainingData.whg) 
+	{
+		answers.push(trainingData.whg[row].gender);
+	}
+
+
+	console.log('Create neural network');
+	const nn = new Network(
+		// weights
+		[1, 1, 1, 1, 1, 1],
+		// bias
+		[0, 0, 0],
+		// activation function
+		Sigmoid,
+		// derivitave function of our activation function
+		DerivSigmoid,
+		// loss function
+		Math.meanSquaredError,
+	);
+
+	console.log('Train neural network', data, answers);
+	nn.train(data, answers, 1000, 0.1)
+
+	console.log('Is Emily a girl or a boy')
+	console.log('Answer', nn.query([-7, -3]) * 100, '% chance of being a girl' );
+
+	console.log('Is Frank a girl or a boy')
+	console.log('Answer', nn.query([20, 2]) * 100, '% chance of being a girl');	
+	
+	
+	// ##############################################################
+	// NOT TESTED - END
+	// ##############################################################	
+	//---------------------------------------------------------------
+
+
+  </script>
+</body>
+
+</html>
